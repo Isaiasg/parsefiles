@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+type userdata struct {
+	User  string
+	ID    string
+	Price string
+}
+
 func main() {
 
 	filterPtr := flag.String("filter", ".txt", "file extension to filter")
@@ -20,12 +26,6 @@ func main() {
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	type userdata struct {
-		User  string
-		ID    string
-		Price string
 	}
 
 	stats := make([]userdata, 0, 3)
@@ -47,13 +47,13 @@ func main() {
 
 		defer file.Close()
 
+		userExp, _ := regexp.Compile("user ([a-z]+) ")
+		idExp, _ := regexp.Compile(" id=([0-9]+),")
+		priceExp, _ := regexp.Compile(" price=([0-9]+\\.?[0-9]+)")
+
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			text := scanner.Text()
-
-			userExp, _ := regexp.Compile("user ([a-z]+) ")
-			idExp, _ := regexp.Compile(" id=([0-9]+),")
-			priceExp, _ := regexp.Compile(" price=([0-9]+\\.?[0-9]+)")
 
 			userName := userExp.FindStringSubmatch(text)
 			id := idExp.FindStringSubmatch(text)
@@ -83,14 +83,18 @@ func main() {
 		csvRecords = append(csvRecords, []string{data.User, data.ID, data.Price})
 	}
 
-	outputFile, err1 := os.Create(*outputFileNamePtr)
+	createOutputFile(csvRecords, *outputFileNamePtr)
+}
+
+func createOutputFile(records [][]string, fileName string) {
+	outputFile, err1 := os.Create(fileName)
 	if err1 != nil {
 		log.Fatal("Cannot create file", err1)
 	}
 
 	w := csv.NewWriter(outputFile)
 
-	for _, record := range csvRecords {
+	for _, record := range records {
 		if err := w.Write(record); err != nil {
 			log.Fatalln("error writing record to csv:", err)
 		}
