@@ -23,12 +23,16 @@ func main() {
 	filterPtr := flag.String("filter", ".txt", "file extension to filter")
 	outputFileNamePtr := flag.String("fileName", "output.csv", "Output file name")
 
+	userExp, _ := regexp.Compile("user ([a-z]+) ")
+	idExp, _ := regexp.Compile(" id=([0-9]+),")
+	priceExp, _ := regexp.Compile(" price=([0-9]+\\.?[0-9]+)")
+
+	stats := make([]userdata, 0, 3)
+
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	stats := make([]userdata, 0, 3)
 
 	for _, fileInfo := range files {
 
@@ -46,10 +50,6 @@ func main() {
 		}
 
 		defer file.Close()
-
-		userExp, _ := regexp.Compile("user ([a-z]+) ")
-		idExp, _ := regexp.Compile(" id=([0-9]+),")
-		priceExp, _ := regexp.Compile(" price=([0-9]+\\.?[0-9]+)")
 
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
