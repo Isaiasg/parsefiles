@@ -12,27 +12,33 @@ import (
 	"strings"
 )
 
-type userdata struct {
-	User  string
-	ID    string
-	Price string
-}
-
 func main() {
 
 	filterPtr := flag.String("filter", ".txt", "file extension to filter")
 	outputFileNamePtr := flag.String("fileName", "output.csv", "Output file name")
 
-	userExp, _ := regexp.Compile("user ([a-z]+) ")
-	idExp, _ := regexp.Compile(" id=([0-9]+),")
-	priceExp, _ := regexp.Compile(" price=([0-9]+\\.?[0-9]+)")
+	keys := []string{"User", "ID", "Price"}
 
-	stats := make([]userdata, 0, 3)
+	csvStructure := map[string]string{
+		"User":  "user ([a-z]+) ",
+		"ID":    " id=([0-9]+),",
+		"Price": " price=([0-9]+\\.?[0-9]+)",
+	}
+
+	regexpCollection := make(map[string]*regexp.Regexp, len(keys))
+	for _, key := range keys {
+		fmt.Println(key, csvStructure[key])
+		compiledRegexp, _ := regexp.Compile(csvStructure[key])
+		regexpCollection[key] = compiledRegexp
+	}
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	csvRecords := [][]string{}
+	csvRecords = append(csvRecords, keys)
 
 	for _, fileInfo := range files {
 
@@ -55,32 +61,17 @@ func main() {
 		for scanner.Scan() {
 			text := scanner.Text()
 
-			userName := userExp.FindStringSubmatch(text)
-			id := idExp.FindStringSubmatch(text)
-			price := priceExp.FindStringSubmatch(text)
-
-			userStats := userdata{
-				User:  userName[1],
-				ID:    id[1],
-				Price: price[1],
+			line := make([]string, len(keys))
+			for index, key := range keys {
+				line[index] = regexpCollection[key].FindStringSubmatch(text)[1]
 			}
 
-			stats = append(stats, userStats)
+			csvRecords = append(csvRecords, line)
 		}
 
 		if err := scanner.Err(); err != nil {
 			log.Fatal(err)
 		}
-	}
-
-	fmt.Println(stats)
-
-	csvRecords := [][]string{
-		{"user", "id", "price"},
-	}
-
-	for _, data := range stats {
-		csvRecords = append(csvRecords, []string{data.User, data.ID, data.Price})
 	}
 
 	createOutputFile(csvRecords, *outputFileNamePtr)
