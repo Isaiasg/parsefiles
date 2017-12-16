@@ -17,17 +17,21 @@ func main() {
 	filterPtr := flag.String("filter", ".txt", "file extension to filter")
 	outputFileNamePtr := flag.String("fileName", "output.csv", "Output file name")
 
-	keys := []string{"User", "ID", "Price"}
-
 	csvStructure := map[string]string{
 		"User":  "user ([a-z]+) ",
 		"ID":    " id=([0-9]+),",
 		"Price": " price=([0-9]+\\.?[0-9]+)",
 	}
 
+	keys := make([]string, len(csvStructure))
+	i := 0
+	for key := range csvStructure {
+		keys[i] = key
+		i++
+	}
+
 	regexpCollection := make(map[string]*regexp.Regexp, len(keys))
 	for _, key := range keys {
-		fmt.Println(key, csvStructure[key])
 		compiledRegexp, _ := regexp.Compile(csvStructure[key])
 		regexpCollection[key] = compiledRegexp
 	}
